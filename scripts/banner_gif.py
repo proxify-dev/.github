@@ -20,9 +20,14 @@ PROFILE = HERE.parent / "profile"
 S = 2  # render at 2x for sharp text on retina screens
 W, H = 1280 * S, 320 * S
 
+# No background box: the banner sits straight on GitHub's page. GitHub has one light page
+# colour (white) but several dark ones (dark #0D1117, dimmed #22272E, ...), and a <picture>
+# can only tell light from dark. So the dark banner is drawn on a matte halfway between
+# them, and that colour is made transparent: text edges blend acceptably on any dark theme.
+MATTE_DARK = "#171C22"
 THEMES = {
-    "dark": dict(bg="#15172F", dot="#272594", label="#949BAD", title="#FFFFFF", tagline="#D5D5FE"),
-    "light": dict(bg="#F5F5FF", dot="#D5D5FE", label="#667085", title="#15172F", tagline="#475467"),
+    "dark": dict(bg=MATTE_DARK, transparent=MATTE_DARK, dot="#272594", label="#949BAD", title="#FFFFFF", tagline="#D5D5FE"),
+    "light": dict(bg="#FFFFFF", transparent=None, dot="#D5D5FE", label="#667085", title="#15172F", tagline="#475467"),
 }
 # the terminal panel stays dark in both themes
 PANEL, EDGE, WHITE, MUTED, ACCENT, GREEN = "#1D2939", "#344054", "#FFFFFF", "#949BAD", "#999AFD", "#12B76A"
@@ -145,10 +150,10 @@ def main():
     rows, blurb = scenes(readme), summary(readme)
     print("summary:", blurb)
     for theme, t in THEMES.items():
-        render(rows, theme, base(t, "agentic-kit", blurb))
+        render(rows, theme, base(t, "agentic-kit", blurb), t["transparent"])
 
 
-def render(rows, theme, bg):
+def render(rows, theme, bg, transparent):
     out = PROFILE / f"banner-{theme}.gif"
     width = PW - COL - 24
     frames, durations = [], []
@@ -168,9 +173,15 @@ def render(rows, theme, bg):
         # the question and command were read while they typed; hold long enough to read the
         # result (~60 ms a character) plus a 2 s glance back, at least 5 s
         durations.append(max(5000, 2000 + 60 * len(" ".join(r))))
-    palette = frames[-1].quantize(colors=48, dither=Image.Dither.NONE)
+    palette = frames[-1].quantize(colors=64, dither=Image.Dither.NONE)
     pframes = [f.quantize(palette=palette, dither=Image.Dither.NONE) for f in frames]
-    pframes[0].save(out, save_all=True, append_images=pframes[1:], duration=durations, loop=0, optimize=True)
+    extra = {}
+    if transparent:
+        corner = pframes[-1].getpixel((0, 0))  # always background
+        panel = pframes[-1].getpixel(((PX + 4) * S, (PY + PH - 4) * S))
+        assert corner != panel, "the terminal panel quantized onto the transparent colour"
+        extra = dict(transparency=corner, disposal=1)
+    pframes[0].save(out, save_all=True, append_images=pframes[1:], duration=durations, loop=0, optimize=True, **extra)
     print(f"{len(rows)} scenes, {len(frames)} frames, {sum(durations) / 1000:.1f}s loop, {out.stat().st_size / 1e6:.2f} MB, {theme}")
 
 if __name__ == "__main__":

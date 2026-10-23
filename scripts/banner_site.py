@@ -16,17 +16,17 @@ import subprocess
 import tempfile
 import urllib.request
 
-from PIL import Image, ImageDraw
+from PIL import Image, ImageChops, ImageDraw
 
-from banner_gif import MONO, NAME, BODY, PROFILE, S, H, W, wrap
+from banner_gif import MATTE_DARK, MONO, NAME, BODY, PROFILE, S, H, W, wrap
 
 SITE = "https://agentic.proxify.io"
 CHROME = (os.environ.get("CHROME") or shutil.which("google-chrome") or shutil.which("chromium")
           or "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome")
 # green, so the playbook reads as a different thing from the indigo kit
 THEMES = {
-    "dark": dict(bg="#15172F", dot="#054F31", title="#FFFFFF", tagline="#D5D5FE"),
-    "light": dict(bg="#F6FEF9", dot="#A6F4C5", title="#15172F", tagline="#475467"),
+    "dark": dict(bg=MATTE_DARK, transparent=True, dot="#054F31", title="#FFFFFF", tagline="#D5D5FE"),
+    "light": dict(bg="#FFFFFF", transparent=False, dot="#A6F4C5", title="#15172F", tagline="#475467"),
 }
 FRAME, EDGE, MUTED, URL_BG = "#1D2939", "#344054", "#949BAD", "#262841"
 FX, FY, FW, FH, BAR = 600, 40, 640, 240, 32  # browser frame, 1x units
@@ -70,6 +70,13 @@ def render(theme, t, title, subtitle, shot):
     inner_w, inner_h = (FW - 2) * S, (FH - BAR - 1) * S
     crop = shot.crop((0, 0, shot.width, int(shot.width * inner_h / inner_w)))
     img.paste(crop.resize((inner_w, inner_h), Image.LANCZOS), ((FX + 1) * S, (FY + BAR) * S))
+    if t["transparent"]:
+        # matte pixels outside the browser frame become transparent; the screenshot keeps its own
+        diff = ImageChops.difference(img, Image.new("RGB", img.size, t["bg"])).convert("L")
+        alpha = diff.point(lambda v: 0 if v == 0 else 255)
+        alpha.paste(255, ((FX - 2) * S, (FY - 2) * S, (FX + FW + 2) * S, (FY + FH + 2) * S))
+        img = img.convert("RGBA")
+        img.putalpha(alpha)
     out = PROFILE / f"playbook-banner-{theme}.png"
     img.save(out, optimize=True)
     return out
