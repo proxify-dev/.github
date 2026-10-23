@@ -8,7 +8,7 @@ Every image is drawn from live sources, so nothing here is edited by hand when a
 | Image | Script | Reads |
 |---|---|---|
 | `banner-{light,dark}.gif` | `scripts/banner_gif.py` | agentic-kit README: the summary under the tagline, and the "You ask Claude" table (one scene per row) |
-| `kit-strip-{light,dark}.svg` | `scripts/org_public.py` | agentic-kit topics, ak version from `.claude-plugin/marketplace.json` |
+| `kit-strip-{light,dark}.svg` | `scripts/org_public.py` | agentic-kit topics |
 | `playbook-banner-{light,dark}.png` | `scripts/banner_site.py` | agentic.proxify.io: page title, subtitle, a screenshot |
 | `playbook-strip-{light,dark}.svg` | `scripts/org_public.py` | agentic-playbook README: the `###` sections under `## Documentation` |
 

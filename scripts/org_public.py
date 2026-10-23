@@ -1,7 +1,7 @@
 """Write the public README's per-repo images (light + dark SVG) from live repo data.
 
 Each repo gets a strip under its banner, in the same layout. agentic-kit: its GitHub topics
-as tags and the ak version from .claude-plugin/marketplace.json.
+as tags.
 agentic-playbook: the sections of its docs (### headings under "## Documentation"), its site.
 Backgrounds are transparent, so GitHub's own page colour shows through in both themes.
 
@@ -81,7 +81,7 @@ def svg(h, label, body):
 
 def strip(t, label, chip_items, meta, cta, colour):
     """Same layout for every repo, under its banner, on one line: what it covers as tags on
-    the left; the kit's version and the call to action on the right, centred on the tags.
+    the left; the call to action on the right, centred on the tags.
     Stars are left to the live badge below; the banner above carries the summary."""
     pills, bottom = chips(t, chip_items, 0, 16, colour)
     version = f'<tspan font-size="16" font-weight="400" fill="{t["muted"]}">{escape(meta)}</tspan>' if meta else ""
@@ -92,8 +92,6 @@ def strip(t, label, chip_items, meta, cta, colour):
 
 def main():
     kit = gh(f"repos/{ORG}/agentic-kit")
-    market = json.loads(file("agentic-kit", ".claude-plugin/marketplace.json"))
-    ak = next(p["version"] for p in market["plugins"] if p["name"] == "ak")
     # what the kit does, 1-2 words a tag, from the repo's GitHub topics (same source as the
     # topic list on the repo page)
     rank = {t: i for i, t in enumerate(KIT_TOPIC_ORDER)}
@@ -106,10 +104,10 @@ def main():
 
     for theme, t in THEMES.items():
         (PROFILE / f"kit-strip-{theme}.svg").write_text(strip(
-            t, "agentic-kit", features, f"ak {ak}", "Install agentic-kit", t["kit"]))
+            t, "agentic-kit", features, "", "Install agentic-kit", t["kit"]))
         (PROFILE / f"playbook-strip-{theme}.svg").write_text(strip(
             t, "agentic-playbook", sections, "", f"Open {site}", t["book"]))
-    print(f"agentic-kit: tags {features}, ak {ak}")
+    print(f"agentic-kit: tags {features}")
     print(f"agentic-playbook: sections {sections}, site {site}")
 
 
