@@ -30,7 +30,13 @@ THEMES = {
     "light": dict(bg="#FFFFFF", transparent=None, dot="#D5D5FE", label="#667085", title="#15172F", tagline="#475467"),
 }
 # the terminal panel stays dark in both themes
-PANEL, EDGE, WHITE, MUTED, ACCENT, GREEN = "#1D2939", "#344054", "#FFFFFF", "#949BAD", "#999AFD", "#12B76A"
+# the terminal follows the theme: dark panel in dark mode, a GitHub-style light code block in
+# light mode. main() swaps these module-level colours in before drawing each theme.
+PANELS = {
+    "dark": dict(PANEL="#1D2939", EDGE="#344054", KNOB="#475467", WHITE="#FFFFFF", MUTED="#949BAD", ACCENT="#999AFD", GREEN="#12B76A"),
+    "light": dict(PANEL="#F6F8FA", EDGE="#D0D7DE", KNOB="#D0D7DE", WHITE="#1F2328", MUTED="#59636E", ACCENT="#3C3ED4", GREEN="#027A48"),
+}
+globals().update(PANELS["dark"])
 
 
 def font(name, size):
@@ -114,7 +120,7 @@ def base(t, name, blurb):
     d.rounded_rectangle([PX * S, PY * S, (PX + PW) * S, (PY + PH) * S], radius=10 * S, fill=PANEL, outline=EDGE, width=S)
     for i in range(3):
         cx = (PX + 20 + 18 * i) * S
-        d.ellipse([cx - 5 * S, (PY + 18) * S - 5 * S, cx + 5 * S, (PY + 18) * S + 5 * S], fill="#475467")
+        d.ellipse([cx - 5 * S, (PY + 18) * S - 5 * S, cx + 5 * S, (PY + 18) * S + 5 * S], fill=KNOB)
     return img
 
 
@@ -151,6 +157,7 @@ def main():
     rows, blurb = scenes(readme), summary(readme)
     print("summary:", blurb)
     for theme, t in THEMES.items():
+        globals().update(PANELS[theme])
         render(rows, theme, base(t, "agentic-kit", blurb), t["transparent"])
 
 

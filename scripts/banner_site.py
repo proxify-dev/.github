@@ -28,7 +28,11 @@ THEMES = {
     "dark": dict(bg=MATTE_DARK, transparent=True, dot="#054F31", title="#FFFFFF", tagline="#D5D5FE"),
     "light": dict(bg="#FFFFFF", transparent=False, dot="#A6F4C5", title="#15172F", tagline="#475467"),
 }
-FRAME, EDGE, MUTED, URL_BG = "#1D2939", "#344054", "#949BAD", "#262841"
+# browser chrome follows the theme, like the kit's terminal
+CHROME_UI = {
+    "dark": dict(frame="#1D2939", edge="#344054", knob="#475467", muted="#949BAD", url_bg="#262841"),
+    "light": dict(frame="#F6F8FA", edge="#D0D7DE", knob="#D0D7DE", muted="#59636E", url_bg="#EAEEF2"),
+}
 BAR = 32  # browser frame: same box as the kit banner's terminal
 FX, FY, FW, FH = PX, PY, PW, PH
 
@@ -50,6 +54,7 @@ def screenshot(theme):
 
 
 def render(theme, t, title, subtitle, shot):
+    ui = CHROME_UI[theme]
     img = Image.new("RGB", (W, H), t["bg"])
     d = ImageDraw.Draw(img)
     for x in range(560 * S, W, 24 * S):
@@ -61,12 +66,12 @@ def render(theme, t, title, subtitle, shot):
     for i, line in enumerate(lines):
         d.text((56 * S, (top + 74 + 30 * i) * S), line, font=BODY, fill=t["tagline"])
 
-    d.rounded_rectangle([FX * S, FY * S, (FX + FW) * S, (FY + FH) * S], radius=10 * S, fill=FRAME, outline=EDGE, width=S)
+    d.rounded_rectangle([FX * S, FY * S, (FX + FW) * S, (FY + FH) * S], radius=10 * S, fill=ui["frame"], outline=ui["edge"], width=S)
     for i in range(3):
         cx, cy = (FX + 20 + 18 * i) * S, (FY + BAR / 2) * S
-        d.ellipse([cx - 5 * S, cy - 5 * S, cx + 5 * S, cy + 5 * S], fill="#475467")
-    d.rounded_rectangle([(FX + 220) * S, (FY + 7) * S, (FX + 420) * S, (FY + 25) * S], radius=9 * S, fill=URL_BG)
-    d.text(((FX + 320) * S, (FY + 16) * S), SITE.removeprefix("https://"), font=MONO.font_variant(size=12 * S), fill=MUTED, anchor="mm")
+        d.ellipse([cx - 5 * S, cy - 5 * S, cx + 5 * S, cy + 5 * S], fill=ui["knob"])
+    d.rounded_rectangle([(FX + 220) * S, (FY + 7) * S, (FX + 420) * S, (FY + 25) * S], radius=9 * S, fill=ui["url_bg"])
+    d.text(((FX + 320) * S, (FY + 16) * S), SITE.removeprefix("https://"), font=MONO.font_variant(size=12 * S), fill=ui["muted"], anchor="mm")
 
     inner_w, inner_h = (FW - 2) * S, (FH - BAR - 1) * S
     crop = shot.crop((0, 0, shot.width, int(shot.width * inner_h / inner_w)))
@@ -74,7 +79,7 @@ def render(theme, t, title, subtitle, shot):
     shot_mask = Image.new("L", (inner_w, inner_h), 0)
     ImageDraw.Draw(shot_mask).rounded_rectangle([0, -20 * S, inner_w - 1, inner_h - 1], radius=9 * S, fill=255)
     img.paste(crop.resize((inner_w, inner_h), Image.LANCZOS), ((FX + 1) * S, (FY + BAR) * S), shot_mask)
-    d.rounded_rectangle([FX * S, FY * S, (FX + FW) * S, (FY + FH) * S], radius=10 * S, outline=EDGE, width=S)
+    d.rounded_rectangle([FX * S, FY * S, (FX + FW) * S, (FY + FH) * S], radius=10 * S, outline=ui["edge"], width=S)
     if t["transparent"]:
         # matte pixels outside the browser frame become transparent; the screenshot keeps its own
         diff = ImageChops.difference(img, Image.new("RGB", img.size, t["bg"])).convert("L")
