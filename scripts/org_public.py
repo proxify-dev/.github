@@ -82,12 +82,12 @@ def svg(h, label, body):
 def strip(t, label, chip_items, meta, cta, colour):
     """Same layout for every repo, under its banner: what it covers as pills on the left,
     the kit's version and the call to action on the right. Stars are left to the live badge below. The banner above carries the summary."""
-    pills, bottom = chips(t, chip_items, 8, 16, colour)
+    pills, bottom = chips(t, chip_items, 0, 16, colour)
     h = max(bottom + 16, 96 if meta else 64)
     return svg(h, label, f'''
       {pills}
-      <text x="{W - 8}" y="36" text-anchor="end" font-size="16" fill="{t["muted"]}">{escape(meta)}</text>
-      <text x="{W - 8}" y="{70 if meta else 39}" text-anchor="end" font-size="20" font-weight="600" fill="{colour}">{escape(cta)} →</text>''')
+      <text x="{W - 2}" y="36" text-anchor="end" font-size="16" fill="{t["muted"]}">{escape(meta)}</text>
+      <text x="{W - 2}" y="{70 if meta else 39}" text-anchor="end" font-size="20" font-weight="600" fill="{colour}">{escape(cta)} →</text>''')
 
 
 def main():
