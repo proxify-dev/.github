@@ -69,12 +69,16 @@ def render(theme, t, title, subtitle, shot):
 
     inner_w, inner_h = (FW - 2) * S, (FH - BAR - 1) * S
     crop = shot.crop((0, 0, shot.width, int(shot.width * inner_h / inner_w)))
-    img.paste(crop.resize((inner_w, inner_h), Image.LANCZOS), ((FX + 1) * S, (FY + BAR) * S))
+    # round the screenshot's bottom corners to the frame's, then redraw the outline over it
+    shot_mask = Image.new("L", (inner_w, inner_h), 0)
+    ImageDraw.Draw(shot_mask).rounded_rectangle([0, -20 * S, inner_w - 1, inner_h - 1], radius=9 * S, fill=255)
+    img.paste(crop.resize((inner_w, inner_h), Image.LANCZOS), ((FX + 1) * S, (FY + BAR) * S), shot_mask)
+    d.rounded_rectangle([FX * S, FY * S, (FX + FW) * S, (FY + FH) * S], radius=10 * S, outline=EDGE, width=S)
     if t["transparent"]:
         # matte pixels outside the browser frame become transparent; the screenshot keeps its own
         diff = ImageChops.difference(img, Image.new("RGB", img.size, t["bg"])).convert("L")
         alpha = diff.point(lambda v: 0 if v == 0 else 255)
-        alpha.paste(255, ((FX - 2) * S, (FY - 2) * S, (FX + FW + 2) * S, (FY + FH + 2) * S))
+        ImageDraw.Draw(alpha).rounded_rectangle([FX * S, FY * S, (FX + FW) * S, (FY + FH) * S], radius=10 * S, fill=255)
         img = img.convert("RGBA")
         img.putalpha(alpha)
     out = PROFILE / f"playbook-banner-{theme}.png"
