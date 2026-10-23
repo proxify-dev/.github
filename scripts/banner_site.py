@@ -18,7 +18,7 @@ import urllib.request
 
 from PIL import Image, ImageChops, ImageDraw
 
-from banner_gif import MATTE_DARK, MONO, NAME, BODY, PROFILE, S, H, W, wrap
+from banner_gif import MATTE_DARK, MONO, NAME, BODY, PROFILE, PH, PW, PX, PY, S, H, W, wrap
 
 SITE = "https://agentic.proxify.io"
 CHROME = (os.environ.get("CHROME") or shutil.which("google-chrome") or shutil.which("chromium")
@@ -29,7 +29,8 @@ THEMES = {
     "light": dict(bg="#FFFFFF", transparent=False, dot="#A6F4C5", title="#15172F", tagline="#475467"),
 }
 FRAME, EDGE, MUTED, URL_BG = "#1D2939", "#344054", "#949BAD", "#262841"
-FX, FY, FW, FH, BAR = 600, 40, 640, 240, 32  # browser frame, 1x units
+BAR = 32  # browser frame: same box as the kit banner's terminal
+FX, FY, FW, FH = PX, PY, PW, PH
 
 
 def heading():

@@ -75,7 +75,8 @@ def scenes(readme):
 
 
 # panel geometry (1x units, scaled by S)
-PX, PY, PW, PH = 640, 56, 600, 208
+# shared with banner_site.py, so the terminal and the browser frame line up on the page
+PX, PY, PW, PH = 600, 40, 640, 240
 COL = 100  # where text starts after the speaker label
 LINE = 26
 
@@ -175,9 +176,16 @@ def render(rows, theme, bg, transparent):
         durations.append(max(5000, 2000 + 60 * len(" ".join(r))))
     palette = frames[-1].quantize(colors=64, dither=Image.Dither.NONE)
     pframes = [f.quantize(palette=palette, dither=Image.Dither.NONE) for f in frames]
+    # quantizing nudges the background (white became #FDFDFD, a faint grey box on GitHub);
+    # pin its palette entry back to the exact colour
+    corner = pframes[-1].getpixel((0, 0))  # always background
+    rgb = list(bg.getpixel((0, 0)))
+    for pf in pframes:
+        pal = pf.getpalette()
+        pal[corner * 3:corner * 3 + 3] = rgb
+        pf.putpalette(pal)
     extra = {}
     if transparent:
-        corner = pframes[-1].getpixel((0, 0))  # always background
         panel = pframes[-1].getpixel(((PX + 4) * S, (PY + PH - 4) * S))
         assert corner != panel, "the terminal panel quantized onto the transparent colour"
         extra = dict(transparency=corner, disposal=1)
