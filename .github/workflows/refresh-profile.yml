@@ -1,0 +1,71 @@
+# Rebuilds the public org page's images from live repo data and commits any change.
+# Daily: the agentic-kit GIF and both strips. Mondays and manual runs: also the
+# agentic.proxify.io screenshot, which differs slightly on every capture and would
+# otherwise add a new 330 kB image to history each day.
+name: Refresh profile
+
+on:
+  schedule:
+    - cron: "0 5 * * 1"        # Monday: everything
+    - cron: "0 5 * * 0,2-6"    # other days: skip the site screenshot
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh-profile
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+
+      - name: Build images
+        env:
+          GH_TOKEN: ${{ github.token }}   # agentic-kit and agentic-playbook are public
+          CHROME: google-chrome
+        run: |
+          set -o pipefail
+          {
+            uv run --with pillow python3 scripts/banner_gif.py
+            python3 scripts/org_public.py
+            if [ "${{ github.event.schedule }}" != "0 5 * * 0,2-6" ]; then
+              uv run --with pillow python3 scripts/banner_site.py
+            fi
+          } 2>&1 | tee run-output.txt
+
+      - name: Commit changes
+        run: |
+          git add profile
+          if git diff --cached --quiet; then
+            echo "No changes."
+            exit 0
+          fi
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -m "Refresh profile images"
+          git push
+
+      # GitHub's own failure emails go to an inbox nobody reads, so a red run would be silent.
+      # The guard is inside the script: a missing webhook logs a line instead of failing twice.
+      - name: Alert Slack on failure
+        if: failure()
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          if [ -z "$SLACK_WEBHOOK_URL" ]; then
+            echo "SLACK_WEBHOOK_URL is not set - skipping the alert."
+            exit 0
+          fi
+          REASON=$(tail -n 20 run-output.txt 2>/dev/null || echo "(no output - failed before the run step)")
+          TEXT=$(printf ':rotating_light: *%s* failed — <%s|run #%s>\n```%s\n```' \
+            "$GITHUB_REPOSITORY" "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
+            "$GITHUB_RUN_NUMBER" "$REASON")
+          jq -n --arg text "$TEXT" '{text: $text}' \
+            | curl -sS -X POST -H 'Content-type: application/json' --data @- "$SLACK_WEBHOOK_URL" \
+            && echo "Slack alert sent."
