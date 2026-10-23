@@ -1,7 +1,8 @@
 """Render the agentic-playbook banner: the site's own title and subtitle beside a live
 screenshot of agentic.proxify.io, in the same frame as the agentic-kit banner.
 
-Title, subtitle and screenshot are all read from the site on each run.
+Title, subtitle and screenshot are all read from the site on each run; the light banner
+shows the site in its light theme and the dark banner in its dark theme.
 Needs Google Chrome (headless) for the screenshot; set $CHROME if it is not on PATH.
 
     uv run --with pillow python3 scripts/banner_site.py
@@ -37,9 +38,11 @@ def heading():
     return html.unescape(m.group(1)).strip(), html.unescape(m.group(2)).strip()
 
 
-def screenshot():
+def screenshot(theme):
+    """The site follows the browser's colour scheme, so take one capture per banner theme."""
     out = pathlib.Path(tempfile.mkdtemp()) / "site.png"
-    subprocess.run([CHROME, "--headless=new", "--disable-gpu", "--hide-scrollbars", "--force-device-scale-factor=2",
+    scheme = ["--force-dark-mode", "--blink-settings=preferredColorScheme=0"] if theme == "dark" else ["--blink-settings=preferredColorScheme=1"]
+    subprocess.run([CHROME, "--headless=new", "--disable-gpu", "--hide-scrollbars", "--force-device-scale-factor=2", *scheme,
                     "--window-size=1440,900", "--virtual-time-budget=8000", f"--screenshot={out}", SITE],
                    check=True, capture_output=True)
     return Image.open(out).convert("RGB")
@@ -74,9 +77,8 @@ def render(theme, t, title, subtitle, shot):
 
 def main():
     title, subtitle = heading()
-    shot = screenshot()
     for theme, t in THEMES.items():
-        out = render(theme, t, title, subtitle, shot)
+        out = render(theme, t, title, subtitle, screenshot(theme))
         print(f"{out.name}: '{title}', {out.stat().st_size / 1e3:.0f} kB")
 
 
